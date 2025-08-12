@@ -25,7 +25,7 @@ export function ThemeSelector() {
 
   return (
     <Select value={theme} onValueChange={setTheme}>
-      <SelectTrigger className="w-[70px] ">
+      <SelectTrigger className="w-[42px] [&>svg]:hidden">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -39,12 +39,6 @@ export function ThemeSelector() {
           <div className="flex items-center gap-2">
             <Moon className="h-4 w-4" />
             <span>Dark</span>
-          </div>
-        </SelectItem>
-        <SelectItem value="system">
-          <div className="flex items-center gap-2">
-            <Monitor className="h-4 w-4" />
-            <span>System</span>
           </div>
         </SelectItem>
       </SelectContent>
