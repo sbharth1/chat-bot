@@ -32,14 +32,14 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
           <SidebarProvider>
-            <AppSidebar />
-            <main>
-              <SidebarTrigger />
+            {/* <AppSidebar /> */}
+            <main className="flex-1 min-w-0">
+              {/* <SidebarTrigger /> */}
               {children}
             </main>
           </SidebarProvider>
