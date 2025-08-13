@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "@/components/theme-selector";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -11,8 +12,15 @@ export default function Home() {
           <div className="text-2xl font-bold">chatBot</div>
           <div className="flex items-center">
             <ThemeSelector />
-            <Button variant="outline" className="p-2 ml-3">Login</Button>
-            <Button variant="outline" className="p-2 ml-3">Sign up</Button>
+            <Link href="/login">
+              <Button variant="outline" className="p-2 ml-3">Login</Button>
+            </Link>
+            <Link href="/signup">
+              <Button variant="outline" className="p-2 ml-3">Sign up</Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="outline" className="p-2 ml-3">Profile</Button>
+            </Link>
           </div>
         </nav>
 
