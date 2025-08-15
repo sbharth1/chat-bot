@@ -5,11 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import axios from 'axios'
+import axios from "axios";
 import Link from "next/link";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -53,14 +50,17 @@ export default function LoginPage() {
 
     try {
       console.log("Login data:", formData);
-      
-      const res = await axios.post(`${apiUrl}/api/v1/login`,formData,{
-        headers:{
-          "Content-Type":"application/json"
-        }
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        throw new Error("NEXT_PUBLIC_API_URL is not defined");
+      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL as string;
+
+      const res = await axios.post(`${apiUrl}/api/v1/login`, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      console.log(res.data,'--- login data')
-      
+      console.log(res.data, "--- login data");
     } catch (error) {
       console.error("Login error:", error);
     } finally {

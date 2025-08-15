@@ -8,8 +8,6 @@ import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import Link from "next/link";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
 export default function SignupPage() {
   const [formData, setFormData] = useState({
     email: "",
@@ -64,12 +62,17 @@ export default function SignupPage() {
 
     try {
       console.log("Signup data:", formData);
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        throw new Error("NEXT_PUBLIC_API_URL is not defined");
+      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL as string;
+
       const res = await axios.post(`${apiUrl}/api/v1/signup`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
-      console.log(res.data,'--singup data')
+      console.log(res.data, "--singup data");
     } catch (error) {
       console.error("Signup error:", error);
     } finally {
