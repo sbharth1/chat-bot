@@ -5,7 +5,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import axios from 'axios'
 import Link from "next/link";
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -18,7 +22,6 @@ export default function LoginPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -49,13 +52,15 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual login logic
       console.log("Login data:", formData);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Redirect to dashboard or profile
-      // router.push('/profile');
+      
+      const res = await axios.post(`${apiUrl}/api/v1/login`,formData,{
+        headers:{
+          "Content-Type":"application/json"
+        }
+      });
+      console.log(res.data,'--- login data')
+      
     } catch (error) {
       console.error("Login error:", error);
     } finally {
