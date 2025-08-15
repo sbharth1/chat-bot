@@ -3,7 +3,6 @@ import { error, success } from "@/lib/apiResponse";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
     const { email, password } = await req.json();
 
     if (!email || !password) {
