@@ -15,9 +15,9 @@ export default function Home() {
             <Link href="/login">
               <Button variant="outline" className="p-2 ml-3">Login</Button>
             </Link>
-            <Link href="/signup">
+            {/* <Link href="/signup">
               <Button variant="outline" className="p-2 ml-3">Sign up</Button>
-            </Link>
+            </Link> */}
             <Link href="/profile">
               <Button variant="outline" className="p-2 ml-3">Profile</Button>
             </Link>
