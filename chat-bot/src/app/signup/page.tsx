@@ -7,16 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ClientOnly } from "@/components/client-only";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    fullName: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string>("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,6 +28,7 @@ export default function SignupPage() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
+    if (serverError) setServerError("");
   };
 
   const validateForm = () => {
@@ -72,9 +77,29 @@ export default function SignupPage() {
           "Content-Type": "application/json",
         },
       });
-      console.log(res.data, "--singup data");
-    } catch (error) {
-      console.error("Signup error:", error);
+      if (res.status === 201 && res.data?.success) {
+        router.push("/login");
+      }
+      setFormData({
+        fullName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || "Something went wrong";
+      if (message.toLowerCase().includes("name")) {
+        setErrors((prev) => ({ ...prev, fullName: message }));
+      } else if (message.toLowerCase().includes("email")) {
+        const finalMessage = message.toLowerCase().includes("already") || message.toLowerCase().includes("in use") ? "Email has been used already" : message;
+        setErrors((prev) => ({ ...prev, email: finalMessage }));
+      } else if (message.toLowerCase().includes("password")) {
+        setErrors((prev) => ({ ...prev, password: message }));
+      } else {
+        setServerError(message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -101,17 +126,19 @@ export default function SignupPage() {
               >
                 Full Name
               </label>
-              <Input
-                id="fullName"
-                name="fullName"
-                type="text"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                className={`w-full ${
-                  errors.fullName ? "border-red-500 focus:border-red-500" : ""
-                }`}
-                placeholder="Enter your full name"
-              />
+              <ClientOnly>
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  className={`w-full ${
+                    errors.fullName ? "border-red-500 focus:border-red-500" : ""
+                  }`}
+                  placeholder="Enter your full name"
+                />
+              </ClientOnly>
               {errors.fullName && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.fullName}
@@ -127,17 +154,19 @@ export default function SignupPage() {
               >
                 Email Address
               </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`w-full ${
-                  errors.email ? "border-red-500 focus:border-red-500" : ""
-                }`}
-                placeholder="Enter your email"
-              />
+              <ClientOnly>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`w-full ${
+                    errors.email ? "border-red-500 focus:border-red-500" : ""
+                  }`}
+                  placeholder="Enter your email"
+                />
+              </ClientOnly>
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.email}
@@ -153,17 +182,19 @@ export default function SignupPage() {
               >
                 Password
               </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`w-full ${
-                  errors.password ? "border-red-500 focus:border-red-500" : ""
-                }`}
-                placeholder="Create a password"
-              />
+              <ClientOnly>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`w-full ${
+                    errors.password ? "border-red-500 focus:border-red-500" : ""
+                  }`}
+                  placeholder="Create a password"
+                />
+              </ClientOnly>
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.password}
@@ -179,19 +210,21 @@ export default function SignupPage() {
               >
                 Confirm Password
               </label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className={`w-full ${
-                  errors.confirmPassword
-                    ? "border-red-500 focus:border-red-500"
-                    : ""
-                }`}
-                placeholder="Confirm your password"
-              />
+              <ClientOnly>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className={`w-full ${
+                    errors.confirmPassword
+                      ? "border-red-500 focus:border-red-500"
+                      : ""
+                  }`}
+                  placeholder="Confirm your password"
+                />
+              </ClientOnly>
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.confirmPassword}

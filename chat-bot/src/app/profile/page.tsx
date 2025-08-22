@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { ClientOnly } from "@/components/client-only";
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -113,12 +114,14 @@ export default function ProfilePage() {
                     Full Name
                   </label>
                   {isEditing ? (
-                    <Input
-                      name="fullName"
-                      value={editData.fullName}
-                      onChange={handleInputChange}
-                      className="w-full"
-                    />
+                    <ClientOnly>
+                      <Input
+                        name="fullName"
+                        value={editData.fullName}
+                        onChange={handleInputChange}
+                        className="w-full"
+                      />
+                    </ClientOnly>
                   ) : (
                     <p className="text-gray-900 dark:text-white py-2">{userData.fullName}</p>
                   )}
@@ -130,13 +133,15 @@ export default function ProfilePage() {
                     Email Address
                   </label>
                   {isEditing ? (
-                    <Input
-                      name="email"
-                      type="email"
-                      value={editData.email}
-                      onChange={handleInputChange}
-                      className="w-full"
-                    />
+                    <ClientOnly>
+                      <Input
+                        name="email"
+                        type="email"
+                        value={editData.email}
+                        onChange={handleInputChange}
+                        className="w-full"
+                      />
+                    </ClientOnly>
                   ) : (
                     <p className="text-gray-900 dark:text-white py-2">{userData.email}</p>
                   )}

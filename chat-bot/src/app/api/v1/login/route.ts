@@ -1,23 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loginSchema } from "@/lib/validators/auth";
 import { error, success } from "@/lib/apiResponse";
-import { z } from "zod";
+import db from "@/lib/db/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+import { generateToken } from "@/lib/auth/auth";
+import { loginSchema } from "@/lib/validators/validate";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const result = loginSchema.safeParse(body);
 
-      if (!result.success) {
-        const tree = z.treeifyError(result.error);  
-        return NextResponse.json({ error: tree }, { status: 400 });
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+      return error(parsed.error.issues[0]?.message || "Invalid input", 400);
     }
 
-    const { email, password } = result.data;
+    const { email, password } = parsed.data;
 
-    console.log(email,'---email',password,'--password')
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+    if (!user) {
+      return error("Invalid email", 401);
+    }
 
-    return success({ message: "Successfully signed up" }, 201);
+    const passwordMatches = await bcrypt.compare(password, user?.password);
+
+    if (!passwordMatches) {
+      return error("Invalid password", 401);
+    }
+
+    const token = generateToken({ userId: user.id, email: user.email });
+
+    const response = NextResponse.json(
+      {
+        success: true,
+        message: "Successfully logged in",
+      },
+      { status: 200 }
+    );
+
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 7,
+    });
+    return response;
   } catch (err) {
     console.error(err);
     return error("Internal Server Error", 500);

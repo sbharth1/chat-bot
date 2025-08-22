@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "@/components/theme-selector";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { ClientOnly } from "@/components/client-only";
 
 export default function Home() {
   return (
@@ -32,11 +33,13 @@ export default function Home() {
           
           <div className="w-full max-w-2xl px-4">
             <div className="flex gap-3">
-              <Input 
-                type="text" 
-                placeholder="Ask me anything..." 
-                className="flex-1"
-              />
+              <ClientOnly>
+                <Input 
+                  type="text" 
+                  placeholder="Ask me anything..." 
+                  className="flex-1"
+                />
+              </ClientOnly>
               <Button variant="outline" className="px-6">
                 Send
               </Button>

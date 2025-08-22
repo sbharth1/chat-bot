@@ -6,10 +6,10 @@ interface MyTokenPayload extends JwtPayload {
   email: string;
 }
 
-const secretKey = process.env.JWT_SECRET_KEY;
+const secretKey = process.env.NEXTAUTH_SECRET!;
 
 if (!secretKey) {
-  throw new Error("FATAL ERROR: JWT_SECRET_KEY is not defined.");
+  throw new Error("FATAL ERROR: NEXTAUTH_SECRET is not defined.");
 }
 
 export const generateToken = (payload: MyTokenPayload) => {

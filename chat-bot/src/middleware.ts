@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
 
   const isProtectedRoute = protectedRoutes.some((prefix) =>
     pathname.startsWith(prefix)
-  );
+    );
 
   const isAuthenticated = Boolean(token);
 
