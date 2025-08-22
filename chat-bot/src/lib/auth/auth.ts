@@ -28,7 +28,6 @@ export const verifyToken = (token: string) => {
     
     const decoded = jwt.verify(token, secretKey) as MyTokenPayload;
     
-    // Additional validation
     if (!decoded || !decoded.userId || !decoded.email) {
       return null;
     }
