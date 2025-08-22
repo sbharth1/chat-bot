@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifyToken } from "@/lib/auth/auth";
 
 const protectedRoutes = ["/dashboard", "/chat"];
 const publicRoutes = ["/login", "/signup", "/"];
@@ -10,9 +11,28 @@ export function middleware(request: NextRequest) {
 
   const isProtectedRoute = protectedRoutes.some((prefix) =>
     pathname.startsWith(prefix)
-    );
+  );
 
-  const isAuthenticated = Boolean(token);
+  let isAuthenticated = false;
+  
+  if (token) {
+    try {
+      const decoded = verifyToken(token);
+      isAuthenticated = decoded !== null;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Token validation:', {
+          hasToken: !!token,
+          isValid: isAuthenticated,
+          pathname,
+          isProtectedRoute
+        });
+      }
+    } catch (error) {
+      console.error('Token verification error:', error);
+      isAuthenticated = false;
+    }
+  }
 
   if (isProtectedRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));

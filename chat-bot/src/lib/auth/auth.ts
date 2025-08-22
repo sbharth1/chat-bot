@@ -1,5 +1,4 @@
 import jwt, { type JwtPayload } from "jsonwebtoken";
-import "dotenv/config";
 
 interface MyTokenPayload extends JwtPayload {
   userId: number;
@@ -13,14 +12,30 @@ if (!secretKey) {
 }
 
 export const generateToken = (payload: MyTokenPayload) => {
-  return jwt.sign(payload, secretKey, { expiresIn: "7h" });
+  try {
+    return jwt.sign(payload, secretKey, { expiresIn: "7h" });
+  } catch (error) {
+    console.error('Token generation error:', error);
+    throw new Error('Failed to generate token');
+  }
 };
 
 export const verifyToken = (token: string) => {
   try {
+    if (!token || typeof token !== 'string') {
+      return null;
+    }
+    
     const decoded = jwt.verify(token, secretKey) as MyTokenPayload;
+    
+    // Additional validation
+    if (!decoded || !decoded.userId || !decoded.email) {
+      return null;
+    }
+    
     return decoded;
   } catch (error) {
+    console.error('Token verification error:', error);
     return null;
   }
 };

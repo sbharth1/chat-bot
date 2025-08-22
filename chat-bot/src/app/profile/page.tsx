@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { ClientOnly } from "@/components/client-only";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -19,6 +21,7 @@ export default function ProfilePage() {
     joinDate: "January 2024"
   });
   const [editData, setEditData] = useState({ ...userData });
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -29,7 +32,6 @@ export default function ProfilePage() {
     setIsLoading(true);
     
     try {
-      // TODO: Implement actual profile update logic
       await new Promise(resolve => setTimeout(resolve, 1000));
       setUserData(editData);
       setIsEditing(false);
@@ -43,6 +45,24 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setEditData(userData);
     setIsEditing(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post('/api/v1/logout', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response) {
+        router.push('/login');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -203,8 +223,12 @@ export default function ProfilePage() {
                   Privacy Settings
                 </Button>
                 <Separator className="my-4" />
-                <Button variant="destructive" className="w-full justify-start">
-                  Delete Account
+                <Button 
+                  variant="destructive" 
+                  className="w-full justify-start"
+                  onClick={handleLogout}
+                >
+                  Logout
                 </Button>
               </div>
             </div>
