@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyToken } from "@/lib/auth/auth";
 
 const protectedRoutes = ["/dashboard", "/chat"];
 const publicRoutes = ["/login", "/signup", "/"];
@@ -13,26 +12,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(prefix)
   );
 
-  let isAuthenticated = false;
-  
-  if (token) {
-    try {
-      const decoded = verifyToken(token);
-      isAuthenticated = decoded !== null;
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Token validation:', {
-          hasToken: !!token,
-          isValid: isAuthenticated,
-          pathname,
-          isProtectedRoute
-        });
-      }
-    } catch (error) {
-      console.error('Token verification error:', error);
-      isAuthenticated = false;
-    }
-  }
+  const isAuthenticated = Boolean(token);
 
   if (isProtectedRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -47,4 +27,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  // matcher: ["/dashboard", "/profile", "/chat"],
 };
+

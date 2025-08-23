@@ -1,30 +1,14 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { ThemeSelector } from "@/components/theme-selector";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import { ClientOnly } from "@/components/client-only";
+import { NavbarClient } from "@/components/NavbarClient";
 
 export default function Home() {
   return (
     <>
       <div className="flex flex-col min-h-screen w-full font-sans">
-        <nav className="flex justify-between items-center p-4 w-full">
-          <div className="text-2xl font-bold">chatBot</div>
-          <div className="flex items-center">
-            <ThemeSelector />
-            <Link href="/login">
-              <Button variant="outline" className="p-2 ml-3">Login</Button>
-            </Link>
-            {/* <Link href="/signup">
-              <Button variant="outline" className="p-2 ml-3">Sign up</Button>
-            </Link> */}
-            <Link href="/profile">
-              <Button variant="outline" className="p-2 ml-3">Profile</Button>
-            </Link>
-          </div>
-        </nav>
-
+        <NavbarClient isAuthenticated/>
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-4">chatBot</h1>

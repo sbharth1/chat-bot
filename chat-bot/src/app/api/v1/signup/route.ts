@@ -6,9 +6,9 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { signupSchema } from "@/lib/validators/validate";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest){
   try {
-    const body = await req.json();
+    const body = await req.json(); 
 
     const validation = signupSchema.safeParse(body);
     if (!validation.success) {
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (existing) {
       return error("Email already in use", 409);
     }
-
+ 
     const hashedPassword = await bcrypt.hash(password, 12);
     const inserted = await db
       .insert(users)
