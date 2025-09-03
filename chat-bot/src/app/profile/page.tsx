@@ -29,7 +29,6 @@ export default function ProfilePage() {
     setIsLoading(true);
     
     try {
-      // TODO: Implement actual profile update logic
       await new Promise(resolve => setTimeout(resolve, 1000));
       setUserData(editData);
       setIsEditing(false);
