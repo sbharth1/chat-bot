@@ -12,7 +12,7 @@ export async function POST(req: NextRequest){
 
     const validation = signupSchema.safeParse(body);
     if (!validation.success) {
-      return error(validation.error.issues[0]?.message || "Invalid input", 400);
+      return error(validation.error.issues[0]?.message || "Invalid input", 400, "VALIDATION_ERROR");
     }
     const { fullName, email, password } = validation.data;
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest){
       where: eq(users.email, email),
     });
     if (existing) {
-      return error("Email already in use", 409);
+      return error("Email already in use", 409, "EMAIL_EXISTS");
     }
  
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -39,6 +39,6 @@ export async function POST(req: NextRequest){
     );
   } catch (err) {
     console.error(err);
-    return error("Internal Server Error", 500);
+    return error("Internal Server Error", 500, "INTERNAL_ERROR");
   }
 }

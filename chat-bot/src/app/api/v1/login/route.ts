@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
-      return error(parsed.error.issues[0]?.message || "Invalid input", 400);
+      return error(parsed.error.issues[0]?.message || "Invalid input", 400, "VALIDATION_ERROR");
     }
 
     const { email, password } = parsed.data;
@@ -22,13 +22,13 @@ export async function POST(req: NextRequest) {
       where: eq(users.email, email),
     });
     if (!user) {
-      return error("Invalid email", 401);
+      return error("Invalid email", 401, "INVALID_EMAIL");
     }
 
     const passwordMatches = await bcrypt.compare(password, user?.password);
 
     if (!passwordMatches) {
-      return error("Invalid password", 401);
+      return error("Invalid password", 401, "INVALID_PASSWORD");
     }
 
     const token = generateToken({ userId: user.id, email: user.email });
@@ -51,6 +51,6 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (err) {
     console.error(err);
-    return error("Internal Server Error", 500);
+    return error("Internal Server Error", 500, "INTERNAL_ERROR");
   }
 }

@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClientOnly } from "@/components/client-only";
+import { ErrorResponse } from "@/lib/apiResponse";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -87,18 +87,33 @@ export default function SignupPage() {
         confirmPassword: "",
       });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Signup error:", err);
-      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || "Something went wrong";
-      if (message.toLowerCase().includes("name")) {
-        setErrors((prev) => ({ ...prev, fullName: message }));
-      } else if (message.toLowerCase().includes("email")) {
-        const finalMessage = message.toLowerCase().includes("already") || message.toLowerCase().includes("in use") ? "Email has been used already" : message;
-        setErrors((prev) => ({ ...prev, email: finalMessage }));
-      } else if (message.toLowerCase().includes("password")) {
-        setErrors((prev) => ({ ...prev, password: message }));
+      
+      if (axios.isAxiosError(err) && err.response?.data) {
+        const errorData = err.response.data;
+        const apiError: ErrorResponse = errorData.error || {};
+        
+        switch (apiError.code) {
+          case "EMAIL_EXISTS":
+            setErrors((prev) => ({ ...prev, email: "Email has been used already" }));
+            break;
+          case "VALIDATION_ERROR":
+            if (apiError.message.toLowerCase().includes("name")) {
+              setErrors((prev) => ({ ...prev, fullName: apiError.message }));
+            } else if (apiError.message.toLowerCase().includes("email")) {
+              setErrors((prev) => ({ ...prev, email: apiError.message }));
+            } else if (apiError.message.toLowerCase().includes("password")) {
+              setErrors((prev) => ({ ...prev, password: apiError.message }));
+            } else {
+              setServerError(apiError.message);
+            }
+            break;
+          default:
+            setServerError(apiError.message || "Something went wrong");
+        }
       } else {
-        setServerError(message);
+        setServerError("Something went wrong. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -126,7 +141,7 @@ export default function SignupPage() {
               >
                 Full Name
               </label>
-              <ClientOnly>
+             
                 <Input
                   id="fullName"
                   name="fullName"
@@ -138,7 +153,7 @@ export default function SignupPage() {
                   }`}
                   placeholder="Enter your full name"
                 />
-              </ClientOnly>
+          
               {errors.fullName && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.fullName}
@@ -154,7 +169,7 @@ export default function SignupPage() {
               >
                 Email Address
               </label>
-              <ClientOnly>
+           
                 <Input
                   id="email"
                   name="email"
@@ -166,7 +181,7 @@ export default function SignupPage() {
                   }`}
                   placeholder="Enter your email"
                 />
-              </ClientOnly>
+           
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.email}
@@ -182,7 +197,7 @@ export default function SignupPage() {
               >
                 Password
               </label>
-              <ClientOnly>
+            
                 <Input
                   id="password"
                   name="password"
@@ -194,7 +209,7 @@ export default function SignupPage() {
                   }`}
                   placeholder="Create a password"
                 />
-              </ClientOnly>
+          
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.password}
@@ -210,7 +225,7 @@ export default function SignupPage() {
               >
                 Confirm Password
               </label>
-              <ClientOnly>
+          
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -224,13 +239,21 @@ export default function SignupPage() {
                   }`}
                   placeholder="Confirm your password"
                 />
-              </ClientOnly>
+           
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.confirmPassword}
                 </p>
               )}
             </div>
+
+            {serverError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {serverError}
+                </p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button

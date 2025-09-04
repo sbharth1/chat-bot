@@ -9,8 +9,7 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthButton from "@/components/auth-button";
-import { ClientOnly } from "@/components/client-only";
-
+import { ErrorResponse } from "@/lib/apiResponse";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -68,26 +67,40 @@ export default function LoginPage() {
         },
       });
       if (res.status === 200 && res.data?.success) {
-        router.push("/login");
+        router.push("/profile");
       }
       setFormData({
         email: "",
         password: "",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login error:", err);
-      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || "Something went wrong";
-      const lower = message.toLowerCase();
-      if (lower.includes("invalid email")) {
-        setErrors((prev) => ({ ...prev, email: "Invalid email" }));
-      } else if (lower.includes("incorrect password")) {
-        setErrors((prev) => ({ ...prev, password: "Incorrect password" }));
-      } else if (lower.includes("email")) {
-        setErrors((prev) => ({ ...prev, email: message }));
-      } else if (lower.includes("password")) {
-        setErrors((prev) => ({ ...prev, password: message }));
+      
+      if (axios.isAxiosError(err) && err.response?.data) {
+        const errorData = err.response.data;
+        const apiError: ErrorResponse = errorData.error || {};
+        
+        switch (apiError.code) {
+          case "INVALID_EMAIL":
+            setErrors((prev) => ({ ...prev, email: apiError.message }));
+            break;
+          case "INVALID_PASSWORD":
+            setErrors((prev) => ({ ...prev, password: apiError.message }));
+            break;
+          case "VALIDATION_ERROR":
+            if (apiError.message.toLowerCase().includes("email")) {
+              setErrors((prev) => ({ ...prev, email: apiError.message }));
+            } else if (apiError.message.toLowerCase().includes("password")) {
+              setErrors((prev) => ({ ...prev, password: apiError.message }));
+            } else {
+              setServerError(apiError.message);
+            }
+            break;
+          default:
+            setServerError(apiError.message || "Something went wrong");
+        }
       } else {
-        setServerError(message);
+        setServerError("Something went wrong. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -115,7 +128,6 @@ export default function LoginPage() {
               >
                 Email Address
               </label>
-              <ClientOnly>
                 <Input
                   id="email"
                   name="email"
@@ -127,7 +139,6 @@ export default function LoginPage() {
                   }`}
                   placeholder="Enter your email"
                 />
-              </ClientOnly>
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.email}
@@ -143,7 +154,7 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <ClientOnly>
+             
                 <Input
                   id="password"
                   name="password"
@@ -155,7 +166,7 @@ export default function LoginPage() {
                   }`}
                   placeholder="Enter your password"
                 />
-              </ClientOnly>
+           
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.password}
@@ -172,6 +183,15 @@ export default function LoginPage() {
                 Forgot your password?
               </Link>
             </div>
+
+            {/* Server Error Display */}
+            {serverError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {serverError}
+                </p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button
@@ -206,7 +226,7 @@ export default function LoginPage() {
           {/* Signup Link */}
           <div className="text-center mt-6">
             <p className="text-gray-600 dark:text-gray-400">
-              Don't have an account?{" "}
+               Don&rsquo;t have an account?{" "}
               <Link
                 href="/signup"
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
