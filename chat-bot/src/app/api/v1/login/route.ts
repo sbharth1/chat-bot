@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { error, success } from "@/lib/apiResponse";
+import { error } from "@/lib/apiResponse";
 import db from "@/lib/db/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         message: "Successfully logged in",
+        token
       },
       { status: 200 }
     );

@@ -67,7 +67,7 @@ export default function LoginPage() {
         },
       });
       if (res.status === 200 && res.data?.success) {
-        router.push("/profile");
+        router.push("/");
       }
       setFormData({
         email: "",

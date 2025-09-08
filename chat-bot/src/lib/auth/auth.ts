@@ -13,7 +13,7 @@ if (!secretKey) {
 }
 
 export const generateToken = (payload: MyTokenPayload) => {
-  return jwt.sign(payload, secretKey, { expiresIn: "7h" });
+  return jwt.sign(payload, secretKey, { expiresIn: "7h" }); 
 };
 
 export const verifyToken = (token: string) => {
