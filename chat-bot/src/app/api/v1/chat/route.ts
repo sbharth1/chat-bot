@@ -1,7 +1,6 @@
 import { error, success } from "@/lib/apiResponse";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest } from "next/server";
-import { en } from "zod/v4/locales";
 
 export async function POST(req: NextRequest) {
   try {

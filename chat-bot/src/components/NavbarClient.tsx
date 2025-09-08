@@ -8,7 +8,7 @@ import { ThemeSelector } from "./theme-selector";
 export function NavbarClient() {
   return (
     <nav className="flex justify-between items-center p-4 w-full">
-      <div className="text-2xl font-bold">chatBot</div>
+      <div className="text-2xl font-bold">ChatBot</div>
       <div className="flex items-center">
         <ThemeSelector />
 

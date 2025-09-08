@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { NavbarClient } from "@/components/NavbarClient";
 import { useState } from "react";
-import axios from "axios";
 
 export default function Home() {
   const [prompt, setPrompt] = useState<string>("");

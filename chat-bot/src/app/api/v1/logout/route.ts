@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { success, error } from "@/lib/apiResponse";
+import {error } from "@/lib/apiResponse";
 
 export async function POST() {
   try {
