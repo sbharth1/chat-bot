@@ -8,29 +8,39 @@ import axios from "axios";
 
 export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
-  const [response, setResponse] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [messages, setMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string }>
+  >([]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); 
+    e.preventDefault();
     if (!prompt.trim()) return;
 
-    setResponse("");
     setError("");
+
+    const userContent = prompt;
+    setPrompt("");
     setLoading(true);
+
+    setMessages((prev) => [...prev, { role: "user", content: userContent }]);
 
     try {
       const res = await axios.post(
         "/api/v1/chat",
-        { prompt },
+        { prompt: userContent },
         {
           headers: { "Content-Type": "application/json" },
         }
       );
 
       if (res.data.success && res.data.data) {
-        setResponse(res.data.data.text || "No response from AI.");
+        const assistantText = res.data.data.text || "No response from AI.";
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: assistantText },
+        ]);
       } else {
         setError("No response from AI.");
       }
@@ -40,7 +50,7 @@ export default function Home() {
       if (err.response?.data?.success === false && err.response?.data?.error) {
         const errorData = err.response.data.error;
         const errorCode = errorData.code;
-        
+
         switch (errorCode) {
           case "API_KEY_MISSING":
             setError("API configuration error. Please contact support.");
@@ -58,7 +68,9 @@ export default function Home() {
             setError("Failed to generate response. Please try again.");
             break;
           default:
-            setError(errorData.message || "Something went wrong. Please try again.");
+            setError(
+              errorData.message || "Something went wrong. Please try again."
+            );
         }
       } else if (err.response?.status === 500) {
         setError("Server error. Please try again later.");
@@ -75,47 +87,64 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full font-sans">
+    <div className="min-h-screen w-full font-sans">
       <NavbarClient />
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">ChatBot</h1>
-          <p className="text-muted-foreground">How can I help you today?</p>
-        </div>
+      <div className="items-center justify-center">
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl px-4">
+            <div className="w-full mx-auto px-0 h-[80vh] overflow-y-auto space-y-4 hide-scrollbar">
+              {error && (
+                <div className="text-red-400 bg-red-950/30 rounded-xl px-4 py-3 text-sm whitespace-pre-wrap">
+                  {error}
+                </div>
+              )}
 
-        <div className="w-full max-w-2xl px-4">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <Textarea
-              rows={4}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Ask me anything..."
-              className="w-full"
-            />
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
+                      message.role === "user"
+                        ? "bg-neutral-800 text-neutral-100"
+                        : "bg-neutral-900 text-neutral-100"
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            <Button
-              variant="outline"
-              type="submit"
-              className="px-6"
-              disabled={loading}
+            <form
+              onSubmit={handleSubmit}
+              className="relative w-full max-w-2xl mx-auto bottom-0"
             >
-              {loading ? "Thinking..." : "Send"}
-            </Button>
-          </form>
+              <div className="relative">
+                <Textarea
+                  rows={1}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Send a message..."
+                  className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark-900 text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
+               
 
-          {error && (
-            <div className="mt-6 bg-red-50 border border-red-200 text-red-800 p-4 rounded-md">
-              <strong>Error:</strong>
-              <p>{error}</p>
-            </div>
-          )}
+                />
 
-          {response && (
-            <div className="mt-6 bg-muted p-4 rounded-md whitespace-pre-wrap">
-              <strong>Response:</strong>
-              <p>{response}</p>
-            </div>
-          )}
+                <Button
+                  type="submit"
+                  variant="ghost"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-8 px-4 text-sm text-dark-100"
+                  disabled={loading}
+                >
+                  {loading ? "Thinking..." : "Send"}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
