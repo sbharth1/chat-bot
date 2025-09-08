@@ -1,9 +1,11 @@
 import jwt, { type JwtPayload } from "jsonwebtoken";
-import "dotenv/config";
+import Cookie from "cookie";
 
 interface MyTokenPayload extends JwtPayload {
   userId: number;
   email: string;
+  iat?: number;
+  exp?: number;
 }
 
 const secretKey = process.env.NEXTAUTH_SECRET!;
@@ -13,10 +15,19 @@ if (!secretKey) {
 }
 
 export const generateToken = (payload: MyTokenPayload) => {
-  return jwt.sign(payload, secretKey, { expiresIn: "7h" }); 
+  return jwt.sign(payload, secretKey, { expiresIn: "7h" });
 };
 
-export const verifyToken = (token: string) => {
+export function parseAuthCookie(
+  cookieHeader: string | undefined
+): string | null {
+  if (!cookieHeader) return null;
+  const cookies = Cookie.parse(cookieHeader);
+  return cookies.token || null; 
+
+}
+
+export const verifyToken = (token: string): JwtPayload | null => {
   try {
     const decoded = jwt.verify(token, secretKey) as MyTokenPayload;
     return decoded;
