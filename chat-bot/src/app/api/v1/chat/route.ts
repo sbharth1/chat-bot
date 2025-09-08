@@ -1,6 +1,7 @@
 import { error, success } from "@/lib/apiResponse";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest } from "next/server";
+import { en } from "zod/v4/locales";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,23 +18,41 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+    });
+    const result = await model.generateContentStream(prompt);
 
-    return success({ text }, 200);
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of result.stream) {
+          const text = chunk.text();
+          controller.enqueue(encoder.encode(text));
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "Transfer-Encoding": "chunked",
+      },
+    });
   } catch (err: any) {
     console.error("Error in chat API:", err);
-    
+
     if (err.message?.includes("API key")) {
       return error("Invalid API key", 401, "INVALID_API_KEY");
     }
-    
+
     if (err.message?.includes("quota")) {
       return error("API quota exceeded", 429, "QUOTA_EXCEEDED");
     }
-    
+
     return error("Failed to generate content", 500, "GENERATION_FAILED");
   }
 }

@@ -10,16 +10,14 @@ export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [messages, setMessages] = useState<
-    Array<{ role: "user" | "assistant"; content: string }>
-  >([]);
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
 
+  
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
     setError("");
-
     const userContent = prompt;
     setPrompt("");
     setLoading(true);
@@ -27,60 +25,42 @@ export default function Home() {
     setMessages((prev) => [...prev, { role: "user", content: userContent }]);
 
     try {
-      const res = await axios.post(
-        "/api/v1/chat",
-        { prompt: userContent },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const res = await fetch(`/api/v1/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: userContent }),
+      });
 
-      if (res.data.success && res.data.data) {
-        const assistantText = res.data.data.text || "No response from AI.";
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: assistantText },
-        ]);
-      } else {
-        setError("No response from AI.");
+      if (!res.body) {
+        throw new Error("No stream found");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        assistantMessage += chunk;
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastMessage = updated[updated.length - 1];
+
+          if (lastMessage?.role === "assistant") {
+            updated[updated.length - 1].content += chunk;
+          } else {
+            updated.push({ role: "assistant", content: chunk });
+          }
+
+          return updated;
+        });
       }
     } catch (err: any) {
-      console.error("Chat error:", err);
-
-      if (err.response?.data?.success === false && err.response?.data?.error) {
-        const errorData = err.response.data.error;
-        const errorCode = errorData.code;
-
-        switch (errorCode) {
-          case "API_KEY_MISSING":
-            setError("API configuration error. Please contact support.");
-            break;
-          case "INVALID_API_KEY":
-            setError("API authentication failed. Please contact support.");
-            break;
-          case "QUOTA_EXCEEDED":
-            setError("API quota exceeded. Please try again later.");
-            break;
-          case "PROMPT_REQUIRED":
-            setError("Please enter a message.");
-            break;
-          case "GENERATION_FAILED":
-            setError("Failed to generate response. Please try again.");
-            break;
-          default:
-            setError(
-              errorData.message || "Something went wrong. Please try again."
-            );
-        }
-      } else if (err.response?.status === 500) {
-        setError("Server error. Please try again later.");
-      } else if (err.response?.status === 429) {
-        setError("Too many requests. Please wait a moment and try again.");
-      } else if (err.code === "NETWORK_ERROR" || !err.response) {
-        setError("Network error. Please check your connection and try again.");
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
+      setError("Streaming error: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -130,8 +110,6 @@ export default function Home() {
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Send a message..."
                   className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark-900 text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
-               
-
                 />
 
                 <Button

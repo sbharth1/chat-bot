@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import LogoutButton from "./LogoutButton";
 import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "./theme-selector";
 
