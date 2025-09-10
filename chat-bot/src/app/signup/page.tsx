@@ -4,7 +4,6 @@ import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -66,13 +65,11 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      console.log("Signup data:", formData);
       if (!process.env.NEXT_PUBLIC_API_URL) {
         throw new Error("NEXT_PUBLIC_API_URL is not defined");
       }
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL as string;
 
-      const res = await axios.post(`${apiUrl}/api/v1/signup`, formData, {
+      const res = await axios.post(`/api/v1/signup`, formData, {
         headers: {
           "Content-Type": "application/json",
         },

@@ -55,13 +55,11 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      console.log("Login data:", formData);
       if (!process.env.NEXT_PUBLIC_API_URL) {
         throw new Error("NEXT_PUBLIC_API_URL is not defined");
       }
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL as string;
 
-      const res = await axios.post(`${apiUrl}/api/v1/login`, formData, {
+      const res = await axios.post(`/api/v1/login`, formData, {
         headers: {
           "Content-Type": "application/json",
         },

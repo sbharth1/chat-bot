@@ -8,13 +8,13 @@ interface MyTokenPayload extends JwtPayload {
   exp?: number;
 }
 
+
 const secretKey = process.env.NEXTAUTH_SECRET!;
 
-if (!secretKey) {
-  throw new Error("FATAL ERROR: NEXTAUTH_SECRET is not defined.");
-}
-
 export const generateToken = (payload: MyTokenPayload) => {
+  if (!secretKey) {
+    throw new Error("NEXTAUTH_SECRET is not defined. Set it in your environment to issue tokens.");
+  }
   return jwt.sign(payload, secretKey, { expiresIn: "7h" });
 };
 
@@ -24,11 +24,11 @@ export function parseAuthCookie(
   if (!cookieHeader) return null;
   const cookies = Cookie.parse(cookieHeader);
   return cookies.token || null; 
-
 }
 
 export const verifyToken = (token: string): JwtPayload | null => {
   try {
+    if (!secretKey) return null;
     const decoded = jwt.verify(token, secretKey) as MyTokenPayload;
     return decoded;
   } catch (error) {
