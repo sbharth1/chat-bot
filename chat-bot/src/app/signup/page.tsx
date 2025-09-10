@@ -264,17 +264,17 @@ export default function SignupPage() {
             </Button>
           </form>
 
-          {/* Divider */}
+          {/* Divider
           <div className="my-6">
             <Separator className="my-4" />
             <div className="text-center text-sm text-gray-500 dark:text-gray-400">
               By creating an account, you agree to our Terms of Service and
               Privacy Policy
             </div>
-          </div>
+          </div> */}
 
           {/* Login Link */}
-          <div className="text-center">
+          <div className="text-center mt-3">
             <p className="text-gray-600 dark:text-gray-400">
               Already have an account?{" "}
               <Link

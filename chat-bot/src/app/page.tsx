@@ -9,11 +9,11 @@ export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const [messages, setMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string }>
+  >([]);
 
-  
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const sendMessage = async () => {
     if (!prompt.trim()) return;
 
     setError("");
@@ -65,6 +65,7 @@ export default function Home() {
     }
   };
 
+  
   return (
     <div className="min-h-screen w-full font-sans">
       <NavbarClient />
@@ -86,7 +87,7 @@ export default function Home() {
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed mb-3 ${
                       message.role === "user"
                         ? "bg-neutral-800 text-neutral-100"
                         : "bg-neutral-900 text-neutral-100"
@@ -99,7 +100,10 @@ export default function Home() {
             </div>
 
             <form
-              onSubmit={handleSubmit}
+              onSubmit={(e)=>{
+                e.preventDefault();
+                sendMessage()
+              }}
               className="relative w-full max-w-2xl mx-auto bottom-0"
             >
               <div className="relative">
@@ -107,8 +111,14 @@ export default function Home() {
                   rows={1}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
                   placeholder="Send a message..."
-                  className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark-900 text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
+                  className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
                 />
 
                 <Button
