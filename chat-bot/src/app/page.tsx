@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { NavbarClient } from "@/components/NavbarClient";
+import { NavbarClient } from "@/components/Navbar";
 import { useState } from "react";
 
 export default function Home() {
@@ -21,7 +21,11 @@ export default function Home() {
     setPrompt("");
     setLoading(true);
 
-    setMessages((prev) => [...prev, { role: "user", content: userContent }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: userContent },
+      { role: "assistant", content: "" },
+    ]);
 
     try {
       const res = await fetch(`/api/v1/chat`, {
@@ -65,7 +69,6 @@ export default function Home() {
     }
   };
 
-  
   return (
     <div className="min-h-screen w-full font-sans">
       <NavbarClient />
@@ -90,21 +93,29 @@ export default function Home() {
                     className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed mb-3 ${
                       message.role === "user"
                         ? "bg-neutral-800 text-neutral-100"
+                        : message.content === ""
+                        ? "bg-none font-extrabold"
                         : "bg-neutral-900 text-neutral-100"
                     }`}
                   >
-                    {message.content}
+                    {message.role === "assistant" &&
+                    message.content === "" &&
+                    loading ? (
+                      <div>...</div>
+                    ) : (
+                      message.content
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
             <form
-              onSubmit={(e)=>{
+              onSubmit={(e) => {
                 e.preventDefault();
-                sendMessage()
+                sendMessage();
               }}
-              className="relative w-full max-w-2xl mx-auto bottom-0"
+              className="relative w-full max-w-2xl mx-auto"
             >
               <div className="relative">
                 <Textarea
