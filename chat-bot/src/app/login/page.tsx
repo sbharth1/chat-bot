@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthButton from "@/components/auth-button";
 import { ErrorResponse } from "@/lib/apiResponse";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,23 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string>("");
   const router = useRouter();
+  const { isLoggedIn, isLoading: authLoading, redirectIfLoggedIn } = useAuth();
+
+  useEffect(() => {
+    redirectIfLoggedIn();
+  }, [isLoggedIn, authLoading]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (isLoggedIn) {
+    return null;
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,52 +71,20 @@ export default function LoginPage() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setServerError("");
 
     try {
-      if (!process.env.NEXT_PUBLIC_API_URL) {
-        throw new Error("NEXT_PUBLIC_API_URL is not defined");
-      }
-
-      const res = await axios.post(`/api/v1/login`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (res.status === 200 && res.data?.success) {
+      const response = await axios.post("/api/v1/login", formData);
+      if (response.status === 200) {
         router.push("/");
+        router.refresh();
       }
-      setFormData({
-        email: "",
-        password: "",
-      });
-    } catch (err: unknown) {
-      console.error("Login error:", err);
-      
-      if (axios.isAxiosError(err) && err.response?.data) {
-        const errorData = err.response.data;
-        const apiError: ErrorResponse = errorData.error || {};
-        
-        switch (apiError.code) {
-          case "INVALID_EMAIL":
-            setErrors((prev) => ({ ...prev, email: apiError.message }));
-            break;
-          case "INVALID_PASSWORD":
-            setErrors((prev) => ({ ...prev, password: apiError.message }));
-            break;
-          case "VALIDATION_ERROR":
-            if (apiError.message.toLowerCase().includes("email")) {
-              setErrors((prev) => ({ ...prev, email: apiError.message }));
-            } else if (apiError.message.toLowerCase().includes("password")) {
-              setErrors((prev) => ({ ...prev, password: apiError.message }));
-            } else {
-              setServerError(apiError.message);
-            }
-            break;
-          default:
-            setServerError(apiError.message || "Something went wrong");
-        }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const errorData = error.response.data as ErrorResponse;
+        setServerError(errorData.message || "Login failed");
       } else {
-        setServerError("Something went wrong. Please try again.");
+        setServerError("An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -106,18 +92,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-dark from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-dark w-full flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome back
+            Sign in to your account
           </h1>
         </div>
 
         {/* Login Form */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Server Error */}
+            {serverError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  {serverError}
+                </div>
+              </div>
+            )}
+
             {/* Email */}
             <div>
               <label
@@ -126,17 +121,17 @@ export default function LoginPage() {
               >
                 Email Address
               </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`w-full ${
-                    errors.email ? "border-red-500 focus:border-red-500" : ""
-                  }`}
-                  placeholder="Enter your email"
-                />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={`w-full ${
+                  errors.email ? "border-red-500 focus:border-red-500" : ""
+                }`}
+                placeholder="Enter your email"
+              />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.email}
@@ -152,44 +147,23 @@ export default function LoginPage() {
               >
                 Password
               </label>
-             
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`w-full ${
-                    errors.password ? "border-red-500 focus:border-red-500" : ""
-                  }`}
-                  placeholder="Enter your password"
-                />
-           
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className={`w-full ${
+                  errors.password ? "border-red-500 focus:border-red-500" : ""
+                }`}
+                placeholder="Enter your password"
+              />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.password}
                 </p>
               )}
             </div>
-
-            {/* Forgot Password */}
-            <div className="flex items-center justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-
-            {/* Server Error Display */}
-            {serverError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {serverError}
-                </p>
-              </div>
-            )}
 
             {/* Submit Button */}
             <Button
@@ -224,7 +198,7 @@ export default function LoginPage() {
           {/* Signup Link */}
           <div className="text-center mt-6">
             <p className="text-gray-600 dark:text-gray-400">
-               Don&rsquo;t have an account?{" "}
+              Don&rsquo;t have an account?{" "}
               <Link
                 href="/signup"
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"

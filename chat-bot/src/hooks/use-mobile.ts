@@ -20,7 +20,6 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  // During SSR or before mounting, return false as a safe default
   if (typeof window === 'undefined' || !mounted) {
     return false
   }

@@ -3,15 +3,74 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import { useState, useEffect } from "react";
 
 export default function AuthButton() {
   const { data: session } = useSession();
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ id: number; email: string; fullName: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (session) {
+  useEffect(() => {
+    let isMounted = true;
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/v1/validate", { method: "GET", credentials: "include" });
+        if (!isMounted) return;
+        
+        if (res.ok) {
+          const data = await res.json();
+          setLoggedIn(true);
+          setUserInfo(data.user);
+        } else {
+          setLoggedIn(false);
+          setUserInfo(null);
+        }
+      } catch {
+        if (!isMounted) return;
+        setLoggedIn(false);
+        setUserInfo(null);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+    checkAuth();    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: "/login",
+        redirect: false 
+      });
+
+      await axios.post("/api/v1/logout");
+      
+      setLoggedIn(false);
+      setUserInfo(null);
+    } catch (error) {
+      console.error("An error occurred during logout:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (loggedIn && userInfo) {
     return (
       <div className="w-full space-y-3">
         <div className="flex items-center gap-3">
-          {session.user?.image && (
+          {session?.user?.image && (
             <Image
               src={session.user.image}
               alt={session.user.name || "User avatar"}
@@ -21,19 +80,14 @@ export default function AuthButton() {
             />
           )}
           <div className="text-sm text-gray-800 dark:text-gray-200">
-            {session.user?.name || session.user?.email}
+            {userInfo.fullName || userInfo.email}
           </div>
         </div>
         <Button
           type="button"
           variant="outline"
           className="w-full"
-          onClick={async () => {
-            try {
-              await axios.post("/api/v1/logout");
-            } catch {}
-            await signOut({ callbackUrl: "/login" });
-          }}
+          onClick={handleLogout}
         >
           Sign out
         </Button>

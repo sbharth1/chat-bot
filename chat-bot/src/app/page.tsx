@@ -13,21 +13,23 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<number | null>(null);
   const [chats, setChats] = useState<any[]>([]);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const res = await fetch("/api/v1/validate", { credentials: "include" });
-        setIsAuthenticated(res.ok);
-        console.log(res.ok,'-------isAuthenticated-------')
-        if (res.ok) {
+        const isAuth = res.ok;
+        setIsAuthenticated(isAuth);
+        
+        if (isAuth) {
           const data = await res.json();
-          console.log("User:", data.data.user);
           await loadChats();
-
         }
       } catch {
         setIsAuthenticated(false);
+      } finally {
+        setIsLoadingAuth(false);
       }
     };
     checkAuth();
@@ -72,10 +74,10 @@ export default function Home() {
       });
       if (res.ok) {
         const data = await res.json();
-        setCurrentChatId(data.data.chat.id);
-        setMessages([]);
+        const newChatId = data.data.chat.id;
+        setCurrentChatId(newChatId);
         await loadChats();
-        return data.data.chat.id;
+        return newChatId;
       }
     } catch (err) {
       console.error("Failed to create chat:", err);
@@ -107,18 +109,26 @@ export default function Home() {
     setMessages((prev) => [
       ...prev,
       { role: "user", content: userContent },
-      { role: "assistant", content: "" },
     ]);
 
+    let chatId = currentChatId;
+    
     if (isAuthenticated) {
-      if (!currentChatId) {
-        const chatId = await createChat(userContent.slice(0, 50));
-        if (chatId) setCurrentChatId(chatId);
+      if (!chatId) {
+        chatId = await createChat(userContent.slice(0, 50));
+        if (chatId) {
+          setCurrentChatId(chatId);
+        }
       }
-      if (currentChatId) {
-        await saveMessage(currentChatId, userContent, "user");
+      if (chatId) {
+        await saveMessage(chatId, userContent, "user");
       }
     }
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "" },
+    ]);
 
     try {
       const res = await fetch(`/api/v1/chat`, {
@@ -134,6 +144,7 @@ export default function Home() {
         } catch {
           setError(`Request failed with status ${res.status}`);
         }
+        setMessages((prev) => prev.slice(0, -1));
         return;
       }
 
@@ -158,19 +169,18 @@ export default function Home() {
 
           if (lastMessage?.role === "assistant") {
             updated[updated.length - 1].content += chunk;
-          } else {
-            updated.push({ role: "assistant", content: chunk });
           }
 
           return updated;
         });
       }
 
-      if (isAuthenticated && currentChatId) { 
-        await saveMessage(currentChatId, assistantMessage, "assistant");
+      if (isAuthenticated && chatId) { 
+        await saveMessage(chatId, assistantMessage, "assistant");
       }
     } catch (err: any) {
       setError("Streaming error: " + err.message);
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setLoading(false);
     }
@@ -180,6 +190,14 @@ export default function Home() {
     setCurrentChatId(null);
     setMessages([]);
   };
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen w-full font-sans flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full font-sans">
@@ -202,7 +220,6 @@ export default function Home() {
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed mb-3 ${
                       message.role === "user"

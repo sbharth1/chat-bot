@@ -1,16 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ErrorResponse } from "@/lib/apiResponse";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { isLoggedIn, isLoading: authLoading, redirectIfLoggedIn } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -20,6 +23,25 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string>("");
+
+  // Redirect if already logged in
+  useEffect(() => {
+    redirectIfLoggedIn();
+  }, [isLoggedIn, authLoading]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is logged in (will redirect)
+  if (isLoggedIn) {
+    return null;
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,7 +71,9 @@ export default function SignupPage() {
       newErrors.password = "Password must be at least 8 characters";
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
@@ -63,54 +87,24 @@ export default function SignupPage() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setServerError("");
 
     try {
-      if (!process.env.NEXT_PUBLIC_API_URL) {
-        throw new Error("NEXT_PUBLIC_API_URL is not defined");
-      }
-
-      const res = await axios.post(`/api/v1/signup`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await axios.post("/api/v1/signup", {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
       });
-      if (res.status === 201 && res.data?.success) {
+
+      if (response.status === 201) {
         router.push("/login");
       }
-      setFormData({
-        fullName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-
-    } catch (err: unknown) {
-      console.error("Signup error:", err);
-      
-      if (axios.isAxiosError(err) && err.response?.data) {
-        const errorData = err.response.data;
-        const apiError: ErrorResponse = errorData.error || {};
-        
-        switch (apiError.code) {
-          case "EMAIL_EXISTS":
-            setErrors((prev) => ({ ...prev, email: "Email has been used already" }));
-            break;
-          case "VALIDATION_ERROR":
-            if (apiError.message.toLowerCase().includes("name")) {
-              setErrors((prev) => ({ ...prev, fullName: apiError.message }));
-            } else if (apiError.message.toLowerCase().includes("email")) {
-              setErrors((prev) => ({ ...prev, email: apiError.message }));
-            } else if (apiError.message.toLowerCase().includes("password")) {
-              setErrors((prev) => ({ ...prev, password: apiError.message }));
-            } else {
-              setServerError(apiError.message);
-            }
-            break;
-          default:
-            setServerError(apiError.message || "Something went wrong");
-        }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const errorData = error.response.data as ErrorResponse;
+        setServerError(errorData.message || "Signup failed");
       } else {
-        setServerError("Something went wrong. Please try again.");
+        setServerError("An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -118,7 +112,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark  w-full flex items-center justify-center p-4">
+    <div className="min-h-screen bg-dark w-full flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -130,6 +124,15 @@ export default function SignupPage() {
         {/* Signup Form */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Server Error */}
+            {serverError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  {serverError}
+                </div>
+              </div>
+            )}
+
             {/* Full Name */}
             <div>
               <label
@@ -138,19 +141,17 @@ export default function SignupPage() {
               >
                 Full Name
               </label>
-             
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className={`w-full ${
-                    errors.fullName ? "border-red-500 focus:border-red-500" : ""
-                  }`}
-                  placeholder="Enter your full name"
-                />
-          
+              <Input
+                id="fullName"
+                name="fullName"
+                type="text"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                className={`w-full ${
+                  errors.fullName ? "border-red-500 focus:border-red-500" : ""
+                }`}
+                placeholder="Enter your full name"
+              />
               {errors.fullName && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.fullName}
@@ -166,19 +167,17 @@ export default function SignupPage() {
               >
                 Email Address
               </label>
-           
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`w-full ${
-                    errors.email ? "border-red-500 focus:border-red-500" : ""
-                  }`}
-                  placeholder="Enter your email"
-                />
-           
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={`w-full ${
+                  errors.email ? "border-red-500 focus:border-red-500" : ""
+                }`}
+                placeholder="Enter your email"
+              />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.email}
@@ -194,19 +193,17 @@ export default function SignupPage() {
               >
                 Password
               </label>
-            
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`w-full ${
-                    errors.password ? "border-red-500 focus:border-red-500" : ""
-                  }`}
-                  placeholder="Create a password"
-                />
-          
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className={`w-full ${
+                  errors.password ? "border-red-500 focus:border-red-500" : ""
+                }`}
+                placeholder="Create a password"
+              />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.password}
@@ -222,21 +219,19 @@ export default function SignupPage() {
               >
                 Confirm Password
               </label>
-          
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={`w-full ${
-                    errors.confirmPassword
-                      ? "border-red-500 focus:border-red-500"
-                      : ""
-                  }`}
-                  placeholder="Confirm your password"
-                />
-           
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className={`w-full ${
+                  errors.confirmPassword
+                    ? "border-red-500 focus:border-red-500"
+                    : ""
+                }`}
+                placeholder="Confirm your password"
+              />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.confirmPassword}
@@ -261,17 +256,8 @@ export default function SignupPage() {
             </Button>
           </form>
 
-          {/* Divider
-          <div className="my-6">
-            <Separator className="my-4" />
-            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              By creating an account, you agree to our Terms of Service and
-              Privacy Policy
-            </div>
-          </div> */}
-
           {/* Login Link */}
-          <div className="text-center mt-3">
+          <div className="text-center mt-6">
             <p className="text-gray-600 dark:text-gray-400">
               Already have an account?{" "}
               <Link
