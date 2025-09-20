@@ -19,9 +19,12 @@ export default function Home() {
       try {
         const res = await fetch("/api/v1/validate", { credentials: "include" });
         setIsAuthenticated(res.ok);
+        console.log(res.ok,'-------isAuthenticated-------')
         if (res.ok) {
           const data = await res.json();
           console.log("User:", data.data.user);
+          await loadChats();
+
         }
       } catch {
         setIsAuthenticated(false);
@@ -31,7 +34,6 @@ export default function Home() {
   }, []);
 
   const loadChats = async () => {
-    if (!isAuthenticated) return;
     try {
       const res = await fetch("/api/v1/chats", { credentials: "include" });
       if (res.ok) {
@@ -40,6 +42,23 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Failed to load chats:", err);
+    }
+  };
+
+  const loadMessages = async (chatId: number) => {
+    try {
+      const res = await fetch(`/api/v1/messages?chatId=${chatId}`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        const formattedMessages = data.data.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content
+        }));
+        setMessages(formattedMessages);
+        setCurrentChatId(chatId);
+      }
+    } catch (err) {
+      console.error("Failed to load messages:", err);
     }
   };
 
@@ -54,6 +73,8 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json();
         setCurrentChatId(data.data.chat.id);
+        setMessages([]);
+        await loadChats();
         return data.data.chat.id;
       }
     } catch (err) {
@@ -145,7 +166,7 @@ export default function Home() {
         });
       }
 
-      if (isAuthenticated && currentChatId) {
+      if (isAuthenticated && currentChatId) { 
         await saveMessage(currentChatId, assistantMessage, "assistant");
       }
     } catch (err: any) {
@@ -155,28 +176,17 @@ export default function Home() {
     }
   };
 
+  const startNewChat = () => {
+    setCurrentChatId(null);
+    setMessages([]);
+  };
+
   return (
     <div className="min-h-screen w-full font-sans">
       <NavbarClient />
       <div className="items-center justify-center">
         <div className="flex justify-center">
-          <div className="w-full max-w-2xl px-4">
-            {/* {isAuthenticated && (
-              <div className="mb-4">
-                <Button onClick={loadChats} variant="outline" size="sm">
-                  Load Chat History
-                </Button>
-                {chats.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {chats.map((chat) => (
-                      <div key={chat.id} className="text-sm text-gray-400 p-2 bg-gray-800 rounded">
-                        {chat.title}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )} */}
+           <div className="w-full max-w-2xl px-4">
 
             <div className="w-full mx-auto px-0 h-[80vh] overflow-y-auto space-y-4 hide-scrollbar">
               {error && (
@@ -192,12 +202,13 @@ export default function Home() {
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
+                
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed mb-3 ${
                       message.role === "user"
                         ? "bg-neutral-800 text-neutral-100"
-                        : message.content === ""
-                        ? "bg-none font-extrabold"
+                        : message.content === "" && loading
+                        ? "bg-neutral-900 text-neutral-100 font-extrabold"
                         : "bg-neutral-900 text-neutral-100"
                     }`}
                   >
@@ -210,7 +221,8 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-              ))}
+              ))} 
+   
             </div>
 
             <form
@@ -226,7 +238,7 @@ export default function Home() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey && !loading) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       sendMessage();
                     }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "./theme-selector";
 import { UserCircle } from "lucide-react"; 
+import LogoutButton from "./LogoutButton";
 
 export function NavbarClient() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -19,7 +20,7 @@ export function NavbarClient() {
       } catch {
         if (!isMounted) return;
         setLoggedIn(false);
-      }
+      } 
     })();
     return () => {
       isMounted = false;
@@ -34,11 +35,7 @@ export function NavbarClient() {
         <ThemeSelector />
 
         {loggedIn ? (
-          <Link href="/profile">
-            <Button variant="ghost" className="p-2 ml-3">
-              <UserCircle className="w-5 h-5" />
-            </Button>
-          </Link>
+          <LogoutButton/>
         ) : (
           <Link href="/login">
             <Button variant="outline" className="p-2 ml-3">

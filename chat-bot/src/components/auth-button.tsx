@@ -2,6 +2,7 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
 
 export default function AuthButton() {
   const { data: session } = useSession();
@@ -27,7 +28,12 @@ export default function AuthButton() {
           type="button"
           variant="outline"
           className="w-full"
-          onClick={() => signOut()}
+          onClick={async () => {
+            try {
+              await axios.post("/api/v1/logout");
+            } catch {}
+            await signOut({ callbackUrl: "/login" });
+          }}
         >
           Sign out
         </Button>
@@ -40,7 +46,7 @@ export default function AuthButton() {
       type="button"
       variant="outline"
       className="w-full flex items-center justify-center gap-3"
-      onClick={() => signIn("google",{callbackUrl:"/dashboard"})}
+      onClick={() => signIn("google", { callbackUrl: "/api/v1/validate?redirect=/" })}
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
         <path
