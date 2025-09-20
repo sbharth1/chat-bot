@@ -51,17 +51,15 @@ export default function LogoutButton() {
         redirect: false 
       });
 
-      const response = await axios.post("/api/v1/logout");
-      if (response.status === 200) {
-        setOpen(false);
-        setLoggedIn(false);
-        router.push("/");
-        router.refresh();
-      } else {
-        console.error("Logout failed");
-      }
+      await axios.post("/api/v1/logout");
+      
+      setOpen(false);
+      setLoggedIn(false);
+      
+      window.location.href = "/";
     } catch (error) {
       console.error("An error occurred during logout:", error);
+      window.location.href = "/";
     }
   };
 
@@ -72,7 +70,7 @@ export default function LogoutButton() {
   if (!loggedIn) {
     return (
       <Link href="/login">
-        <Button variant="outline" className="p-2 ml-3">
+        <Button variant="outline" className="w-full">
           Login
         </Button>
       </Link>
@@ -82,7 +80,7 @@ export default function LogoutButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="ms-2">
+        <Button variant="outline" className="w-full">
           Log Out
         </Button>
       </DialogTrigger>
@@ -95,7 +93,7 @@ export default function LogoutButton() {
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            No
+            Cancel
           </Button>
           <Button onClick={handleLogout}>
             Yes, Logout

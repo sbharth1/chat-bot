@@ -8,7 +8,7 @@ export function NavbarClient() {
     <nav className="flex justify-between items-center p-4 w-full bg-dark">
       <div className="text-2xl font-bold">ChatBot</div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <ThemeSelector />
         <LogoutButton />
       </div>
