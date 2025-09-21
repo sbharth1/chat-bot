@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   fullName: varchar({ length: 255 }).notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  profileImage: text("profile_image"), 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -24,6 +25,7 @@ export const chats = pgTable("chats", {
     .references(() => users.id),
   title: text("title").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"), 
 });
 
 
@@ -31,7 +33,7 @@ export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   chatId: integer("chat_id")
     .notNull()
-    .references(() => chats.id),
+    .references(() => chats.id, {onDelete:"cascade"}),
   content: text("content").notNull(),
   role: text("role").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

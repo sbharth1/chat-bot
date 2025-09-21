@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { error, success } from "@/lib/apiResponse";
 import db from "@/lib/db/db";
 import { chats, messages } from "@/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { getUserFromRequest } from "@/lib/auth/server";
 
 export async function GET(req: NextRequest) {
@@ -16,7 +16,11 @@ export async function GET(req: NextRequest) {
     if (!chatId) return error("chatId is required", 400, "VALIDATION_ERROR");
 
     const chat = await db.query.chats.findFirst({ 
-      where: and(eq(chats.id, chatId), eq(chats.userId, user.id)) 
+      where: and(
+        eq(chats.id, chatId), 
+        eq(chats.userId, user.id),
+        isNull(chats.deletedAt)
+      ) 
     });
     if (!chat) return error("Chat not found", 404, "CHAT_NOT_FOUND");
 
@@ -43,7 +47,13 @@ export async function POST(req: NextRequest) {
 
     if (!chatId || !content) return error("chatId and content are required", 400, "VALIDATION_ERROR");
 
-    const chat = await db.query.chats.findFirst({ where: and(eq(chats.id, chatId), eq(chats.userId, user.id)) });
+    const chat = await db.query.chats.findFirst({ 
+      where: and(
+        eq(chats.id, chatId), 
+        eq(chats.userId, user.id),
+        isNull(chats.deletedAt) 
+      ) 
+    });
     if (!chat) return error("Chat not found", 404, "CHAT_NOT_FOUND");
 
     const inserted = await db.insert(messages).values({ chatId, content, role }).returning();

@@ -27,7 +27,14 @@ export async function GET(req: NextRequest) {
       if (redirectTo) {
         return NextResponse.redirect(new URL(redirectTo, req.url));
       }
-      return success({ user: { id: user.id, email: user.email, fullName: user.fullName } }, 200);
+      return success({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          fullName: user.fullName,
+          profileImage: user.profileImage 
+        } 
+      }, 200);
     }
 
     const session = await getServerSession(authOptions);
@@ -44,7 +51,12 @@ export async function GET(req: NextRequest) {
 
       const inserted = await db
         .insert(users)
-        .values({ email, fullName, password: hashed })
+        .values({ 
+          email, 
+          fullName, 
+          password: hashed,
+          profileImage: session?.user?.image || null 
+        })
         .returning();
 
       user = inserted[0]!;
@@ -54,7 +66,15 @@ export async function GET(req: NextRequest) {
     const res = redirectTo
       ? NextResponse.redirect(new URL(redirectTo, req.url))
       : NextResponse.json(
-          { success: true, user: { id: user.id, email: user.email, fullName: user.fullName } },
+          { 
+            success: true, 
+            user: { 
+              id: user.id, 
+              email: user.email, 
+              fullName: user.fullName,
+              profileImage: user.profileImage 
+            } 
+          },
           { status: 200 }
         );
     res.cookies.set("token", ourToken, {

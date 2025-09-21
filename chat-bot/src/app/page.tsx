@@ -228,6 +228,11 @@ export default function Home() {
     setMessages([]);
   };
 
+  const clearMessages = () => {
+    setMessages([]);
+    setCurrentChatId(null);
+  };
+
   if (isLoadingAuth) {
     return (
       <div className="min-h-screen w-full font-sans flex items-center justify-center">
@@ -317,7 +322,13 @@ export default function Home() {
 
   return (
     <SidebarProvider>
-    <AppSidebar chats={chats} onChatSelect={loadMessages} currentChatId={currentChatId} />
+    <AppSidebar 
+      chats={chats} 
+      onChatSelect={loadMessages} 
+      currentChatId={currentChatId}
+      onChatDeleted={loadChats}
+      onCurrentChatDeleted={startNewChat}
+    />
     <SidebarInset>
       <div className="relative flex flex-col h-screen">
   
