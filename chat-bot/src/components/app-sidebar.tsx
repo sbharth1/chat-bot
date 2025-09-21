@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import LogoutButton from "./LogoutButton";
+import Profile from './Profile';
 
 interface AppSidebarProps {
   chats: any[];
@@ -57,6 +58,7 @@ export function AppSidebar({ chats, onChatSelect, currentChatId }: AppSidebarPro
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
+        <Profile/>
         <LogoutButton />
       </SidebarFooter>
     </Sidebar>

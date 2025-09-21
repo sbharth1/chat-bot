@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NavbarClient } from "@/components/NavbarClient";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
@@ -16,6 +16,9 @@ export default function Home() {
   const [currentChatId, setCurrentChatId] = useState<number | null>(null);
   const [chats, setChats] = useState<any[]>([]);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -36,6 +39,34 @@ export default function Home() {
     };
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+    
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 192)}px`;
+    }
+  };
+
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+    
+    if (textareaRef.current) {
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+    }
+  };
 
   const loadChats = async () => {
     try {
@@ -107,6 +138,10 @@ export default function Home() {
     const userContent = prompt;
     setPrompt("");
     setLoading(true);
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
 
     setMessages((prev) => [
       ...prev,
@@ -241,8 +276,8 @@ export default function Home() {
                       )}
                     </div>
                   </div>
-                ))} 
-     
+                ))}
+                <div ref={messagesEndRef} />
               </div>
 
               <form
@@ -254,15 +289,11 @@ export default function Home() {
               >
                 <div className="relative">
                   <Textarea
+                    ref={textareaRef}
                     rows={1}
                     value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
+                    onChange={handleTextareaChange}
+                    onKeyDown={handleTextareaKeyDown}
                     placeholder="Send a message..."
                     className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
                   />
@@ -286,97 +317,96 @@ export default function Home() {
 
   return (
     <SidebarProvider>
-      <AppSidebar chats={chats} onChatSelect={loadMessages} currentChatId={currentChatId} />
-      <SidebarInset>
-        <div className="flex flex-col h-screen">
-          <div className="flex items-center gap-2 px-4 py-2 border-b">
-            <SidebarTrigger />
-            <h1 className="text-lg font-semibold">Chat</h1>
-            {currentChatId && (
-              <Button
-                onClick={startNewChat}
-                variant="outline"
-                size="sm"
-                className="ml-auto"
-              >
-                New Chat
-              </Button>
-            )}
-          </div>
-          
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 overflow-y-auto p-4">
-              {error && (
-                <div className="text-red-400 bg-red-950/30 rounded-xl px-4 py-3 text-sm whitespace-pre-wrap mb-4">
-                  {error}
-                </div>
-              )}
-
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  } mb-4`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
-                      message.role === "user"
-                        ? "bg-neutral-800 text-neutral-100"
-                        : message.content === "" && loading
-                        ? "bg-neutral-900 text-neutral-100 font-extrabold"
-                        : "bg-neutral-900 text-neutral-100"
-                    }`}
-                  >
-                    {message.role === "assistant" &&
-                    message.content === "" &&
-                    loading ? (
-                      <div>...</div>
-                    ) : (
-                      message.content
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t p-4">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  sendMessage();
-                }}
-                className="relative w-full max-w-4xl mx-auto"
-              >
-                <div className="relative">
-                  <Textarea
-                    rows={1}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    placeholder="Send a message..."
-                    className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
-                  />
-
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 h-8 px-4 text-sm text-dark-100"
-                    disabled={loading}
-                  >
-                    {loading ? "Thinking..." : "Send"}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
+    <AppSidebar chats={chats} onChatSelect={loadMessages} currentChatId={currentChatId} />
+    <SidebarInset>
+      <div className="relative flex flex-col h-screen">
+  
+        <div className="sticky top-0 z-20 bg-background border-b px-4 py-2 flex items-center gap-2">
+          <SidebarTrigger />
+          <h1 className="text-lg font-semibold">Chat</h1>
+          {currentChatId && (
+            <Button
+              onClick={startNewChat}
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+            >
+              New Chat
+            </Button>
+          )}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+  
+        <div className="flex-1 overflow-y-auto p-4">
+          {error && (
+            <div className="text-red-400 bg-red-950/30 rounded-xl px-4 py-3 text-sm whitespace-pre-wrap mb-4">
+              {error}
+            </div>
+          )}
+  
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`flex ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              } mb-4`}
+            >
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
+                  message.role === "user"
+                    ? "bg-neutral-800 text-neutral-100"
+                    : message.content === "" && loading
+                    ? "bg-neutral-900 text-neutral-100 font-extrabold"
+                    : "bg-neutral-900 text-neutral-100"
+                }`}
+              >
+                {message.role === "assistant" &&
+                message.content === "" &&
+                loading ? (
+                  <div>...</div>
+                ) : (
+                  message.content
+                )}
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+          <div className="h-28" />
+        </div>
+  
+        <div className="sticky bottom-0 z-20 bg-dark border-t p-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
+            }}
+            className="relative w-full max-w-4xl mx-auto"
+          >
+            <div className="relative">
+              <Textarea
+                ref={textareaRef}
+                rows={1}
+                value={prompt}
+                onChange={handleTextareaChange}
+                onKeyDown={handleTextareaKeyDown}
+                placeholder="Send a message..."
+                className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
+              />
+  
+              <Button
+                type="submit"
+                variant="ghost"
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-8 px-4 text-sm text-dark-100"
+                disabled={loading}
+              >
+                {loading ? "Thinking..." : "Send"}
+              </Button>
+            </div>
+          </form>
+        </div>
+  
+      </div>
+    </SidebarInset>
+  </SidebarProvider>
+  
   );
 }
