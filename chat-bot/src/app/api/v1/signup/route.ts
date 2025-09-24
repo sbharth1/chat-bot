@@ -5,6 +5,7 @@ import { users } from "@/lib/db/schema";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { signupSchema } from "@/lib/validators/validate";
+import { randomBytes } from "crypto";
 
 export async function POST(req: NextRequest){
   try {
@@ -24,9 +25,12 @@ export async function POST(req: NextRequest){
     }
  
     const hashedPassword = await bcrypt.hash(password, 12);
+    const token = randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+
     const inserted = await db
       .insert(users)
-      .values({ fullName, email, password: hashedPassword })
+      .values({ fullName, email, password: hashedPassword, emailVerified: false, verificationToken: token, verificationTokenExpires: expires })
       .returning({
         id: users.id,
         email: users.email,
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest){
       });
 
     return success(
-      { message: "Successfully signed up", user: inserted[0] },
+      { message: "Successfully signed up.", user: inserted[0] },
       201
     );
   } catch (err) {

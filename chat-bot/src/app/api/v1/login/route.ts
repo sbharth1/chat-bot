@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
       return error("Invalid password", 401, "INVALID_PASSWORD");
     }
 
+    if (!user.emailVerified) {
+      return error("Please verify your email before logging in.", 403, "EMAIL_NOT_VERIFIED");
+    }
+
     const token = generateToken({ userId: user.id, email: user.email });
 
     const response = NextResponse.json(

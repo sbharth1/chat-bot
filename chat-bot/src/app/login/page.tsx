@@ -81,8 +81,9 @@ export default function LoginPage() {
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const errorData = error.response.data as ErrorResponse;
-        setServerError(errorData.message || "Login failed");
+        const data = error.response.data as any;
+        const message = data?.error?.message || data?.message;
+        setServerError(message || "Login failed");
       } else {
         setServerError("An unexpected error occurred");
       }

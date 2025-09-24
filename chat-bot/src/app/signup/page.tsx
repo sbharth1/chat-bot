@@ -24,12 +24,10 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string>("");
 
-  // Redirect if already logged in
   useEffect(() => {
     redirectIfLoggedIn();
   }, [isLoggedIn, authLoading]);
 
-  // Show loading while checking authentication
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -38,7 +36,6 @@ export default function SignupPage() {
     );
   }
 
-  // Don't render the form if user is logged in (will redirect)
   if (isLoggedIn) {
     return null;
   }
@@ -101,8 +98,9 @@ export default function SignupPage() {
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const errorData = error.response.data as ErrorResponse;
-        setServerError(errorData.message || "Signup failed");
+        const data = error.response.data as any;
+        const message = data?.error?.message || data?.message;
+        setServerError(message || "Signup failed");
       } else {
         setServerError("An unexpected error occurred");
       }

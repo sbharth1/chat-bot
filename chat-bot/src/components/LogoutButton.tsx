@@ -12,37 +12,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function LogoutButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/v1/validate", { method: "GET", credentials: "include" });
-        if (!isMounted) return;
-        setLoggedIn(res.ok);
-      } catch {
-        if (!isMounted) return;
-        setLoggedIn(false);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      };
-    };
-    checkAuth();    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { isLoggedIn, isLoading } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -52,10 +30,7 @@ export default function LogoutButton() {
       });
 
       await axios.post("/api/v1/logout");
-      
       setOpen(false);
-      setLoggedIn(false);
-      
       window.location.href = "/";
     } catch (error) {
       console.error("An error occurred during logout:", error);
@@ -67,7 +42,7 @@ export default function LogoutButton() {
     return null;
   }
 
-  if (!loggedIn) {
+  if (!isLoggedIn) {
     return (
       <Link href="/login">
         <Button variant="outline" className="w-full">

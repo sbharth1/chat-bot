@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { useState, useEffect, useRef } from "react";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
@@ -21,6 +22,19 @@ export default function Home() {
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    setIsAuthenticated(isLoggedIn);
+    setIsLoadingAuth(authLoading);
+  }, [isLoggedIn, authLoading]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadChats();
+    }
+  }, [isLoggedIn]);
 
   const MessageRenderer = ({ content }: { content: string }) => {
     const parts: Array<{ type: "text" | "code"; text?: string; code?: string; lang?: string }> = [];
@@ -90,26 +104,6 @@ export default function Home() {
       </div>
     );
   };
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/v1/validate", { credentials: "include" });
-        const isAuth = res.ok;
-        setIsAuthenticated(isAuth);
-        
-        if (isAuth) {
-          const data = await res.json();
-          await loadChats();
-        }
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoadingAuth(false);
-      }
-    };
-    checkAuth();
-  }, []);
 
   useEffect(() => {
     scrollToBottom();
