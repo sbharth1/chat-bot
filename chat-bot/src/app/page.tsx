@@ -6,6 +6,8 @@ import { NavbarClient } from "@/components/NavbarClient";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useState, useEffect, useRef } from "react";
+import hljs from "highlight.js";
+import "highlight.js/styles/github-dark.css";
 
 export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
@@ -19,6 +21,75 @@ export default function Home() {
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const MessageRenderer = ({ content }: { content: string }) => {
+    const parts: Array<{ type: "text" | "code"; text?: string; code?: string; lang?: string }> = [];
+    const regex = /```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({ type: "text", text: content.slice(lastIndex, match.index) });
+      }
+      parts.push({ type: "code", code: match[2], lang: match[1] || undefined });
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < content.length) {
+      parts.push({ type: "text", text: content.slice(lastIndex) });
+    }
+
+    return (
+      <div className="space-y-3">
+        {parts.map((p, i) =>
+          p.type === "code" ? (
+            <CodeBlockView key={i} code={p.code || ""} language={p.lang} />
+          ) : (
+            <div key={i} className="whitespace-pre-wrap">{p.text}</div>
+          )
+        )}
+      </div>
+    );
+  };
+
+  const CodeBlockView = ({ code, language }: { code: string; language?: string }) => {
+    const [copied, setCopied] = useState(false);
+    let html = "";
+    try {
+      if (language && hljs.getLanguage(language)) {
+        html = hljs.highlight(code, { language }).value;
+      } else {
+        html = hljs.highlightAuto(code).value;
+      }
+    } catch {
+      html = code.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    }
+
+    const onCopy = async () => {
+      try {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      } catch {}
+    };
+
+    return (
+      <div className="relative group">
+        <button
+          type="button"
+          onClick={onCopy}
+          className={`absolute right-2 top-2 z-10 text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-100 transition-opacity ${
+            copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <pre className="rounded-xl overflow-x-auto bg-neutral-900 p-4 text-neutral-100 border border-neutral-800">
+          <code dangerouslySetInnerHTML={{ __html: html }} />
+        </pre>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -197,7 +268,22 @@ export default function Home() {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
+        const raw = decoder.decode(value);
+        let chunk = raw;
+        try {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed === "string") {
+            chunk = parsed;
+          } else if (parsed && typeof parsed === "object") {
+            const possible = (parsed as any).content ?? (parsed as any).text ?? (parsed as any).delta ?? "";
+            chunk = typeof possible === "string" && possible.length > 0
+              ? possible
+              : JSON.stringify(parsed, null, 2);
+          }
+        } catch(err) {
+           console.log(err)
+        }
+
         assistantMessage += chunk;
 
         setMessages((prev) => {
@@ -277,7 +363,7 @@ export default function Home() {
                       loading ? (
                         <div>...</div>
                       ) : (
-                        message.content
+                        <MessageRenderer content={message.content} />
                       )}
                     </div>
                   </div>
@@ -300,7 +386,7 @@ export default function Home() {
                     onChange={handleTextareaChange}
                     onKeyDown={handleTextareaKeyDown}
                     placeholder="Send a message..."
-                    className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
+                    className="w-full resize-none min-h-[4.25rem] max-h-[50vh] pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
                   />
 
                   <Button
@@ -375,7 +461,7 @@ export default function Home() {
                 loading ? (
                   <div>...</div>
                 ) : (
-                  message.content
+                  <MessageRenderer content={message.content} />
                 )}
               </div>
             </div>
@@ -400,7 +486,7 @@ export default function Home() {
                 onChange={handleTextareaChange}
                 onKeyDown={handleTextareaKeyDown}
                 placeholder="Send a message..."
-                className="w-full resize-none min-h-[4.25rem] max-h-48 pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
+                className="w-full resize-none min-h-[4.25rem] max-h-[50vh] pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
               />
   
               <Button
