@@ -12,20 +12,31 @@ export async function POST(req: NextRequest) {
       return error("Prompt is required", 400, "PROMPT_REQUIRED");
     }
 
+
     if (!process.env.GEMINI_API_KEY) {
       console.error("GEMINI_API_KEY is not set");
       return error("API key not configured", 500, "API_KEY_MISSING");
     }
 
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+        model: "gemini-2.5-pro" 
+
+    }); 
+    const result = await model.generateContentStream({
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }],
+        },
+      ],
     });
-    const result = await model.generateContentStream(prompt);
+
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
-      async start(controller) {
+      async start(controller) { 
         for await (const chunk of result.stream) {
           const text = chunk.text();
           controller.enqueue(encoder.encode(text));
@@ -34,7 +45,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return new Response(stream, {
+
+      return new Response(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache",

@@ -323,11 +323,11 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen w-full font-sans">
+      <div className="min-h-screen max-w-[100%]  font-sans">
         <NavbarClient />
         <div className="items-center justify-center">
           <div className="flex justify-center">
-             <div className="w-full max-w-2xl px-4">
+             <div className="w-full max-w-4xl px-4">
 
               <div className="w-full mx-auto px-0 h-[80vh] overflow-y-auto space-y-4 hide-scrollbar">
                 {error && (
@@ -344,7 +344,7 @@ export default function Home() {
                     }`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed mb-3 ${
+                      className={`max-w-[100%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed mb-3 ${
                         message.role === "user"
                           ? "bg-neutral-800 text-neutral-100"
                           : message.content === "" && loading
@@ -380,7 +380,7 @@ export default function Home() {
                     onChange={handleTextareaChange}
                     onKeyDown={handleTextareaKeyDown}
                     placeholder="Send a message..."
-                    className="w-full resize-none min-h-[4.25rem] max-h-[50vh] pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
+                    className="max-w-[100%] mt-2 resize-none min-h-[4.25rem] max-h-[50vh] pr-20 p-4 rounded-2xl bg-dark text-dark-100 placeholder:text-dark-400 border-0 focus-visible:ring-0 focus-visible:outline-none"
                   />
 
                   <Button
@@ -464,7 +464,7 @@ export default function Home() {
           <div className="h-28" />
         </div>
   
-        <div className="sticky bottom-0 z-20 bg-dark border-t p-4">
+        <div className="sticky bottom-0 z-20 bg-dark p-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
